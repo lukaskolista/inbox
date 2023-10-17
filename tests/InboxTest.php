@@ -33,12 +33,7 @@ class MongoInboxTest extends TestCase
             }
         };
         $messageRepository = $this->createMongoDBMessageRepository();
-        $simpleMessageConsumer = new SimpleMessageConsumer(
-            $messageRepository,
-            1,
-            1,
-            $messageHandler
-        );
+        $simpleMessageConsumer = new SimpleMessageConsumer($messageRepository, $messageHandler);
         $inbox = new Inbox(
             $messageRepository,
             null,
@@ -50,7 +45,7 @@ class MongoInboxTest extends TestCase
 
         $inbox->put($faker->uuid(), (object) ['name' => $name, 'color' => $color]);
 
-        $simpleMessageConsumer->consume();
+        $simpleMessageConsumer->consume(1, 1);
 
         self::assertCount(1, $messageHandler->getMessages());
         self::assertEquals((object) ['name' => $name, 'color' => $color], $messageHandler->getMessages()[0]);
@@ -65,8 +60,6 @@ class MongoInboxTest extends TestCase
         $messageRepository = $this->createMongoDBMessageRepository();
         $simpleMessageConsumer = new SimpleMessageConsumer(
             $messageRepository,
-            1,
-            1,
             new class implements MessageHandler {
                 public function handle(object $message): void {}
             }
@@ -77,7 +70,7 @@ class MongoInboxTest extends TestCase
             new ThrowExceptionPolicy()
         );
         $inbox->put($messageId, new \stdClass());
-        $simpleMessageConsumer->consume();
+        $simpleMessageConsumer->consume(1, 1);
 
         $this->expectException(\Throwable::class);
         $inbox->put($messageId, new \stdClass());

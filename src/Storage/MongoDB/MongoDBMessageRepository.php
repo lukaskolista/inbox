@@ -29,6 +29,21 @@ class MongoDBMessageRepository implements MessageRepository
         );
     }
 
+    public function clearConsumedMessagesAndLeaveNewest(int $newestMessagesToLeave): void
+    {
+        $document = $this->collection->findOne(
+            ['consumed' => true],
+            ['sort' => ['time' => -1], 'skip' => $newestMessagesToLeave]
+        );
+
+        $this->collection->deleteMany(['consumed' => true, 'time' => ['$lte' => $document->time]]);
+    }
+
+    public function clearConsumedMessagesOlderThanOrEqual(\DateTimeInterface $dateTime): void
+    {
+        $this->collection->deleteMany(['consumed' => true, 'time' => ['$lte' => $dateTime->getTimestamp()]]);
+    }
+
     public function find(string $id): ?Message
     {
         $document = $this->collection->findOne(['_id' => $id]);

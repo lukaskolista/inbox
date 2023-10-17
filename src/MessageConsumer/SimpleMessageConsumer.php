@@ -2,22 +2,19 @@
 
 namespace Lukaskolista\Inbox\MessageConsumer;
 
-use Lukaskolista\Inbox\MessageConsumer;
 use Lukaskolista\Inbox\MessageHandler;
 use Lukaskolista\Inbox\MessageRepository;
 
-class SimpleMessageConsumer implements MessageConsumer
+class SimpleMessageConsumer
 {
     public function __construct(
         private MessageRepository $messageRepository,
-        private int $messagesLimit,
-        private int $attemptsLimit,
         private MessageHandler $messageHandler
     ) {}
 
-    public function consume(): void
+    public function consume(int $messagesLimit, int $attemptsLimit): void
     {
-        $messages = $this->messageRepository->findForConsume($this->messagesLimit, $this->attemptsLimit);
+        $messages = $this->messageRepository->findForConsume($messagesLimit, $attemptsLimit);
 
         foreach ($messages as $message) {
             try {
