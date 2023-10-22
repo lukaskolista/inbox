@@ -7,7 +7,8 @@ class Inbox
     public function __construct(
         private MessageRepository $messageRepository,
         private ?MessageDispatcher $messageDispatcher,
-        private ExistingMessagePolicy $existingMessagePolicy
+        private ExistingMessagePolicy $existingMessagePolicy,
+        private int $attemptsLimit
     ) {}
 
     public function put(string $id, object $message): void
@@ -20,7 +21,7 @@ class Inbox
             return;
         }
 
-        $wrappedMessage = Message::new($id, $message);
+        $wrappedMessage = Message::new($id, $message, $this->attemptsLimit);
 
         $this->messageRepository->save($wrappedMessage);
         $this->messageDispatcher?->dispatch($wrappedMessage);

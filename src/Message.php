@@ -9,12 +9,13 @@ final class Message
         private readonly object $payload,
         private readonly float $time,
         private bool $consumed,
+        private int $attemptsLimit,
         private int $attempts
     ) {}
 
-    public static function new(string $id, object $payload): self
+    public static function new(string $id, object $payload, int $attemptsLimit): self
     {
-        return new Message($id, $payload, microtime(true), false, 0);
+        return new Message($id, $payload, microtime(true), false, $attemptsLimit, 0);
     }
 
     public function getId(): string
@@ -42,6 +43,11 @@ final class Message
         return $this->consumed;
     }
 
+    public function getAttemptsLimit(): int
+    {
+        return $this->attemptsLimit;
+    }
+
     public function incrementAttemptsCounter(): void
     {
         $this->attempts++;
@@ -50,5 +56,10 @@ final class Message
     public function getAttempts(): int
     {
         return $this->attempts;
+    }
+
+    public function shouldRepeat(): bool
+    {
+        return !$this->consumed && $this->attempts < $this->attemptsLimit;
     }
 }

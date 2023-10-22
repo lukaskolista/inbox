@@ -1,12 +1,12 @@
 <?php
 
-namespace Lukaskolista\Inbox\Storage\MongoDB;
+namespace Lukaskolista\Inbox\Storage\Mongo;
 
 use Lukaskolista\Inbox\Message;
 use Lukaskolista\Inbox\MessageRepository;
 use MongoDB\Collection;
 
-class MongoDBMessageRepository implements MessageRepository
+class MongoMessageRepository implements MessageRepository
 {
     public function __construct(private Collection $collection) {}
 
@@ -19,6 +19,7 @@ class MongoDBMessageRepository implements MessageRepository
                     'payload' => $message->getPayload(),
                     'time' => $message->getTime(),
                     'consumed' => $message->isConsumed(),
+                    'attemptsLimit' => $message->getAttemptsLimit(),
                     'attempts' => $message->getAttempts()
                 ],
                 '$setOnInsert' => [
@@ -70,6 +71,7 @@ class MongoDBMessageRepository implements MessageRepository
             $document->payload->jsonSerialize(),
             $document->time,
             $document->consumed,
+            $document->attemptsLimit,
             $document->attempts
         );
     }

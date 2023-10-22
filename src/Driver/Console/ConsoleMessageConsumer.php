@@ -1,11 +1,11 @@
 <?php
 
-namespace Lukaskolista\Inbox\MessageConsumer;
+namespace Lukaskolista\Inbox\Driver\Console;
 
-use Lukaskolista\Inbox\MessageHandler;
+use Lukaskolista\Inbox\Inbox\MessageHandler;
 use Lukaskolista\Inbox\MessageRepository;
 
-class SimpleMessageConsumer
+final readonly class ConsoleMessageConsumer
 {
     public function __construct(
         private MessageRepository $messageRepository,
@@ -17,15 +17,7 @@ class SimpleMessageConsumer
         $messages = $this->messageRepository->findForConsume($messagesLimit, $attemptsLimit);
 
         foreach ($messages as $message) {
-            try {
-                $this->messageHandler->handle($message->getPayload());
-                $message->markAsConsumed();
-            } catch (\Throwable) {
-            } finally {
-                $message->incrementAttemptsCounter();
-            }
-
-            $this->messageRepository->save($message);
+            $this->messageHandler->handle($message);
         }
     }
 }
