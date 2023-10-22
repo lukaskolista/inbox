@@ -10,6 +10,7 @@ use Lukaskolista\Inbox\Inbox;
 use Lukaskolista\Inbox\Driver\Console\ConsoleMessageConsumer;
 use Lukaskolista\Inbox\Inbox\MessageHandler;
 use Lukaskolista\Inbox\MessageHandler as CustomMessageHandler;
+use Lukaskolista\Inbox\MessageMapper\AttributeMessageMapper;
 use Lukaskolista\Inbox\MessageRepository;
 use Lukaskolista\Inbox\Storage\Mongo\MongoMessageRepository;
 use MongoDB\Client as MongoDBClient;
@@ -24,6 +25,7 @@ class MongoInboxTest extends TestCase
     public function putMessageWithUniqueIdOnConsoleDriverSuccessfully(): void
     {
         $faker = Factory::create();
+
         $messageHandler = new class implements CustomMessageHandler {
             private array $messages = [];
 
@@ -49,15 +51,13 @@ class MongoInboxTest extends TestCase
             1
         );
 
-        $name = $faker->name();
-        $color = $faker->colorName();
+        $message = new TestMessage($faker->name(), $faker->colorName());
 
-        $inbox->put($faker->uuid(), (object) ['name' => $name, 'color' => $color]);
-
+        $inbox->put($faker->uuid(), $message);
         $consoleMessageConsumer->consume(1, 1);
 
         self::assertCount(1, $messageHandler->getMessages());
-        self::assertEquals((object) ['name' => $name, 'color' => $color], $messageHandler->getMessages()[0]);
+        self::assertEquals($message, $messageHandler->getMessages()[0]);
     }
 
     #[Test]
@@ -94,15 +94,13 @@ class MongoInboxTest extends TestCase
             1
         );
 
-        $name = $faker->name();
-        $color = $faker->colorName();
+        $message = new TestMessage($faker->name(), $faker->colorName());
 
-        $inbox->put($faker->uuid(), (object) ['name' => $name, 'color' => $color]);
-
+        $inbox->put($faker->uuid(), $message);
         $amqpMessageConsumer->consume();
 
         self::assertCount(1, $messageHandler->getMessages());
-        self::assertEquals((object) ['name' => $name, 'color' => $color], $messageHandler->getMessages()[0]);
+        self::assertEquals($message, $messageHandler->getMessages()[0]);
     }
 
     #[Test]
@@ -127,7 +125,7 @@ class MongoInboxTest extends TestCase
             new ThrowExceptionPolicy(),
             1
         );
-        $inbox->put($messageId, new \stdClass());
+        $inbox->put($messageId, new TestMessage($faker->name(), $faker->colorName()));
         $consoleMessageConsumer->consume(1, 1);
 
         $this->expectException(\Throwable::class);
@@ -139,7 +137,7 @@ class MongoInboxTest extends TestCase
         $mongoClient = new MongoDBClient('mongodb://root:root@127.0.0.1:27022');
         $collection = $mongoClient->selectCollection('inbox-test', 'messages');
 
-        return new MongoMessageRepository($collection);
+        return new MongoMessageRepository($collection, new AttributeMessageMapper([TestMessage::class]));
     }
 
     private function createRabbitMQChannel(): AMQPChannel

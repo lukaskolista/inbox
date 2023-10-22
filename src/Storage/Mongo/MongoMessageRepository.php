@@ -3,12 +3,13 @@
 namespace Lukaskolista\Inbox\Storage\Mongo;
 
 use Lukaskolista\Inbox\Message;
+use Lukaskolista\Inbox\MessageMapper;
 use Lukaskolista\Inbox\MessageRepository;
 use MongoDB\Collection;
 
 class MongoMessageRepository implements MessageRepository
 {
-    public function __construct(private Collection $collection) {}
+    public function __construct(private Collection $collection, private MessageMapper $messageMapper) {}
 
     public function save(Message $message): void
     {
@@ -16,7 +17,7 @@ class MongoMessageRepository implements MessageRepository
             ['_id' => $message->getId()],
             [
                 '$set' => [
-                    'payload' => $message->getPayload(),
+                    'payload' => $this->messageMapper->mapMessageToData($message->getPayload()),
                     'time' => $message->getTime(),
                     'consumed' => $message->isConsumed(),
                     'attemptsLimit' => $message->getAttemptsLimit(),
@@ -68,7 +69,7 @@ class MongoMessageRepository implements MessageRepository
     {
         return new Message(
             $document->_id,
-            $document->payload->jsonSerialize(),
+            $this->messageMapper->mapDataToMessage($document->payload->jsonSerialize()),
             $document->time,
             $document->consumed,
             $document->attemptsLimit,
